@@ -30,22 +30,24 @@ fun main() {
 
         when (userInput) {
             "1" -> {
-                if (wordsToLearn.isNotEmpty()) {
-                    var userAnswer = ""
-                    while (wordsToLearn.isNotEmpty() && userAnswer != "0") {
-                        val possibleAnswers = wordsToLearn.shuffled().take(VARIANTS_OF_ANSWERS)
-                        val correctAnswer = possibleAnswers[0]
-                        val guessedWord = correctAnswer.translatedWord
-                        val answersIndexed = possibleAnswers.mapIndexed { index, variant ->
-                            "${index+1}. ${variant.originalWord}"  }.joinToString("\n")
-
-                        println("Введите верный вариант перевода слова \"$guessedWord\":\n$answersIndexed")
-                        userAnswer = readln()
-                    }
-                } else {
+                if (wordsToLearn.isEmpty()) {
                     println("Поздравляем! Вы выучили все слова!")
                     break
                 }
+
+                var userAnswer = ""
+                while (wordsToLearn.isNotEmpty() && userAnswer != "0") {
+                    val possibleAnswers = wordsToLearn.shuffled().take(VARIANTS_OF_ANSWERS)
+                    val correctAnswer = possibleAnswers.random()
+                    val guessedWord = correctAnswer.translatedWord
+                    val answersIndexed = possibleAnswers.mapIndexed { index, variant ->
+                        "${index + 1}. ${variant.originalWord}"
+                    }.joinToString("\n")
+
+                    println("Введите верный вариант перевода слова \"$guessedWord\":\n$answersIndexed")
+                    userAnswer = readln()
+                }
+
             }
 
             "2" -> {
