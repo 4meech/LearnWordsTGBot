@@ -78,8 +78,10 @@ fun main() {
 
 fun saveDictionary(dictionary: MutableList<Word>) {
     val file = File("words.txt")
-    val newWordLines = dictionary.joinToString("\n") {
-        "${it.originalWord}|${it.translatedWord}|${it.correctAnswersCount}"
+    file.writeText("")
+
+    dictionary.forEach { word ->
+        val wordLine = "${word.originalWord}|${word.translatedWord}|${word.correctAnswersCount}\n"
+        file.appendText(wordLine)
     }
-    file.writeText(newWordLines)
 }
