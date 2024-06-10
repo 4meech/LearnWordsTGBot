@@ -39,15 +39,22 @@ fun main() {
                 while (wordsToLearn.isNotEmpty() && userAnswer != "0") {
                     val possibleAnswers = wordsToLearn.shuffled().take(VARIANTS_OF_ANSWERS)
                     val correctAnswer = possibleAnswers.random()
+                    var correctIndex = -1
                     val guessedWord = correctAnswer.translatedWord
                     val answersIndexed = possibleAnswers.mapIndexed { index, variant ->
+                        if (variant == correctAnswer) correctIndex = index + 1
                         "${index + 1}. ${variant.originalWord}"
                     }.joinToString("\n")
 
                     println("Введите верный вариант перевода слова \"$guessedWord\":\n$answersIndexed")
+                    println("0. Выход в главное меню")
                     userAnswer = readln()
+                    if (userAnswer.toInt() == correctIndex) {
+                        println("Верно!")
+                        correctAnswer.correctAnswersCount++
+                        saveDictionary(dictionary)
+                    }
                 }
-
             }
 
             "2" -> {
@@ -58,7 +65,7 @@ fun main() {
             }
 
             "0" -> {
-                println("Заврешение программы")
+                println("Завершение программы")
                 break
             }
 
@@ -66,5 +73,15 @@ fun main() {
                 println("Ошибка ввода: введите 1, 2 или 0")
             }
         }
+    }
+}
+
+fun saveDictionary(dictionary: MutableList<Word>) {
+    val file = File("words.txt")
+    file.writeText("")
+
+    dictionary.forEach { word ->
+        val wordLine = "${word.originalWord}|${word.translatedWord}|${word.correctAnswersCount}\n"
+        file.appendText(wordLine)
     }
 }
