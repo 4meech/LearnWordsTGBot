@@ -1,9 +1,6 @@
-const val ANSWERS_TO_LEARN = 3
-const val VARIANTS_OF_ANSWERS = 4
-
 fun main() {
 
-    val trainer = LearnWordsTrainer()
+    val trainer = LearnWordsTrainer(3, 4)
 
     while (true) {
 
@@ -19,42 +16,40 @@ fun main() {
 
         when (userInput) {
             "1" -> {
-                var question = trainer.getNextQuestion()
+                while (true) {
+                    val question = trainer.getNextQuestion()
 
-                if (question == null) {
-                    println("Поздравляем! Вы выучили все слова!")
-                    break
-                }
-
-                var userAnswer = ""
-
-                while (userAnswer != "0") {
+                    if (question == null) {
+                        println("Поздравляем! Вы выучили все слова!")
+                        break
+                    }
                     var correctIndex = -1
                     val guessedWord = question.correctAnswer.translatedWord
                     val answersIndexed = question.variants.mapIndexed { index, variant ->
-                        if (variant == question?.correctAnswer) correctIndex = index + 1
+                        if (variant == question.correctAnswer) correctIndex = index + 1
                         "${index + 1}. ${variant.originalWord}"
                     }.joinToString("\n")
 
                     println("Введите верный вариант перевода слова \"$guessedWord\":\n$answersIndexed")
                     println("0. Выход в главное меню")
-                    userAnswer = readln()
+                    val userAnswer: String = readln()
 
-
+                    if (userAnswer == "0") break
                     if (userAnswer.toInt() == correctIndex) {
                         println("Верно!")
                         question.correctAnswer.correctAnswersCount++
                         trainer.saveDictionary(trainer.dictionary)
                     }
                 }
-                question = trainer.getNextQuestion()
             }
 
             "2" -> {
                 val statistics = trainer.getStatisctics()
 
-                println("Выучено слов: ${statistics.learnedWords} из ${statistics.totalWords} | " +
-                        "${statistics.percentageLearned}%")
+                println(
+                    "Выучено слов: ${statistics.learnedWords} из ${statistics.totalWords} | " +
+                            "${statistics.percentageLearned}%"
+                )
             }
 
             "0" -> {
@@ -68,4 +63,3 @@ fun main() {
         }
     }
 }
-

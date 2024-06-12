@@ -3,15 +3,13 @@ import java.io.File
 data class Question(
     val variants: List<Word>,
     val correctAnswer: Word,
-//    val possibleAnswers: List<Word>,
-
 )
 
-class LearnWordsTrainer {
+class LearnWordsTrainer(private val answersToLearn: Int, private val variantsOfAnswers: Int) {
 
     val dictionary = loadDictionary()
 
-    fun loadDictionary(): MutableList<Word> {
+    private fun loadDictionary(): MutableList<Word> {
         val dictionary = mutableListOf<Word>()
         val wordsFile = File("words.txt")
         wordsFile.readLines().forEach { wordsLine ->
@@ -35,22 +33,21 @@ class LearnWordsTrainer {
 
     fun getStatisctics(): Statistics {
         val totalWords = dictionary.size
-        val learnedWords = dictionary.filter { it.correctAnswersCount >= ANSWERS_TO_LEARN }.size
+        val learnedWords = dictionary.filter { it.correctAnswersCount >= answersToLearn }.size
         val percentageLearned = ((learnedWords.toDouble() / totalWords.toDouble()) * 100.0).toInt()
 
         return Statistics(totalWords, learnedWords, percentageLearned)
     }
 
     fun getNextQuestion(): Question? {
-        val wordsToLearn = dictionary.filter { it.correctAnswersCount < ANSWERS_TO_LEARN }
+        val wordsToLearn = dictionary.filter { it.correctAnswersCount < answersToLearn }
         if (wordsToLearn.isEmpty()) return null
 
-        val possibleAnswers = wordsToLearn.shuffled().take(VARIANTS_OF_ANSWERS)
+        val possibleAnswers = wordsToLearn.shuffled().take(variantsOfAnswers)
         val correctAnswer = possibleAnswers.random()
         return Question(
             variants = possibleAnswers,
             correctAnswer = correctAnswer,
-//            possibleAnswers = possibleAnswers,
         )
     }
 }
