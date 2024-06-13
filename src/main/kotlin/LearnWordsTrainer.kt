@@ -1,8 +1,9 @@
 import java.io.File
+import kotlin.random.Random
 
 data class Question(
     val variants: List<Word>,
-    val correctAnswer: Word,
+    val correctIndex: Int,
 )
 
 class LearnWordsTrainer(private val answersToLearn: Int, private val variantsOfAnswers: Int) {
@@ -44,10 +45,10 @@ class LearnWordsTrainer(private val answersToLearn: Int, private val variantsOfA
         if (wordsToLearn.isEmpty()) return null
 
         val possibleAnswers = wordsToLearn.shuffled().take(variantsOfAnswers)
-        val correctAnswer = possibleAnswers.random()
+        val correctIndex = Random.nextInt(0, possibleAnswers.size)
         return Question(
             variants = possibleAnswers,
-            correctAnswer = correctAnswer,
+            correctIndex = correctIndex,
         )
     }
 }
