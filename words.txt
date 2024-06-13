@@ -1,7 +1,7 @@
-hello|привет|2
-farewell|прощание|0
-dog|собака|3
-cat|кошка|1
-synchrophasotron|синхрофазотрон|1
-armadillo|броненосец|0
-eagle|орёл|0
+hello|привет|
+farewell|прощание|
+dog|собака|
+cat|кошка|
+synchrophasotron|синхрофазотрон|
+armadillo|броненосец|
+eagle|орёл|4

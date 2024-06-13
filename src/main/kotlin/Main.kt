@@ -3,9 +3,13 @@ import kotlin.system.exitProcess
 fun main() {
 
     try {
-        val trainer = LearnWordsTrainer(3, 4)
+        val trainer = try {
+            LearnWordsTrainer(3, 4)
+        } catch (e: Exception) {
+            println("Невозможно загрузить словарь. ${e.message}")
+            return
+        }
         while (true) {
-
             println(
                 """
             Введите номер пункта меню: 
@@ -27,20 +31,24 @@ fun main() {
                         }
 
                         val correctIndex = question.correctIndex
-                        val guessedWord = question.variants[correctIndex].translatedWord
-                        val answersIndexed = question.variants.mapIndexed { index, variant ->
-                            "${index + 1}. ${variant.originalWord}"
-                        }.joinToString("\n")
+                        println(question.asConsoleString())
 
-                        println("Введите верный вариант перевода слова \"$guessedWord\":\n$answersIndexed")
-                        println("0. Выход в главное меню")
-                        val userAnswer: String = readln()
+                        val userAnswer = readln().toIntOrNull() ?: -1
 
-                        if (userAnswer == "0") break
-                        if (userAnswer.toInt() == correctIndex + 1) {
+                        if (userAnswer == 0) {
+                            break
+                        } else if (userAnswer !in question.variants.indices) {
+                            println("Ошибка ввода: введите число от 1 до ${question.variants.size}")
+                            println()
+                            continue
+                        }
+
+                        if (trainer.checkAnswer(question, userAnswer)) {
                             println("Верно!")
-                            question.variants[correctIndex].correctAnswersCount++
-                            trainer.saveDictionary(trainer.dictionary)
+                            println()
+                        } else {
+                            println("Неверно! Правильный ответ: ${question.variants[correctIndex].originalWord}")
+                            println()
                         }
                     }
                 }
@@ -65,7 +73,7 @@ fun main() {
             }
         }
     } catch (e: Exception) {
-        println("Ошибка! ${e.message}")
+        println("Ошибка! ${e.localizedMessage}")
         exitProcess(1)
     }
 }

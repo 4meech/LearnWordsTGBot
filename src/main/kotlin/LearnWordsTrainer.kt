@@ -1,28 +1,26 @@
 import java.io.File
-import kotlin.random.Random
-
-data class Question(
-    val variants: List<Word>,
-    val correctIndex: Int,
-)
 
 class LearnWordsTrainer(private val answersToLearn: Int, private val variantsOfAnswers: Int) {
 
-    val dictionary = loadDictionary()
+    private val dictionary = loadDictionary()
 
     private fun loadDictionary(): MutableList<Word> {
-        val dictionary = mutableListOf<Word>()
-        val wordsFile = File("words.txt")
-        wordsFile.readLines().forEach { wordsLine ->
-            val parsedWords = wordsLine.split("|")
-            val word = Word(parsedWords[0], parsedWords[1], parsedWords[2].toIntOrNull() ?: 0)
+        try {
+            val dictionary = mutableListOf<Word>()
+            val wordsFile = File("words.txt")
+            wordsFile.readLines().forEach { wordsLine ->
+                val parsedWords = wordsLine.split("|")
+                val word = Word(parsedWords[0], parsedWords[1], parsedWords[2].toIntOrNull() ?: 0)
 
-            dictionary.add(word)
+                dictionary.add(word)
+            }
+            return dictionary
+        } catch (e: IndexOutOfBoundsException) {
+            throw IllegalStateException("Некорректный файл .\\words.txt")
         }
-        return dictionary
     }
 
-    fun saveDictionary(dictionary: MutableList<Word>) {
+    private fun saveDictionary(dictionary: MutableList<Word>) {
         val file = File("words.txt")
         file.writeText("")
 
@@ -44,11 +42,33 @@ class LearnWordsTrainer(private val answersToLearn: Int, private val variantsOfA
         val wordsToLearn = dictionary.filter { it.correctAnswersCount < answersToLearn }
         if (wordsToLearn.isEmpty()) return null
 
-        val possibleAnswers = wordsToLearn.shuffled().take(variantsOfAnswers)
-        val correctIndex = Random.nextInt(0, possibleAnswers.size)
+        val possibleAnswers = if (wordsToLearn.size < variantsOfAnswers) {
+            val wordsLearned = dictionary.filter { it.correctAnswersCount >= answersToLearn }.shuffled()
+            wordsToLearn.shuffled().take(variantsOfAnswers) +
+                    wordsLearned.take(variantsOfAnswers - wordsToLearn.size)
+        } else {
+            wordsToLearn.shuffled().take(variantsOfAnswers)
+        }.shuffled()
+
+        val correctIndex = possibleAnswers.indices.random()
+
         return Question(
             variants = possibleAnswers,
             correctIndex = correctIndex,
         )
+    }
+
+    fun checkAnswer(question: Question?, userAnswer: Int): Boolean {
+        return question?.let {
+            val correctIndex = it.correctIndex
+
+            if (userAnswer == correctIndex + 1) {
+                it.variants[correctIndex].correctAnswersCount++
+                saveDictionary(dictionary)
+                true
+            } else {
+                false
+            }
+        } ?: false
     }
 }
