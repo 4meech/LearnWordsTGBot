@@ -3,9 +3,9 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
-fun main() {
+fun main(args: Array<String> ) {
 
-    val botToken = "7014989361:AAHb9K9ZfRX4D7_0d591nfx5osWrbcczMh8"
+    val botToken = args[0]
     var updateId = 0
 
     while (true) {
