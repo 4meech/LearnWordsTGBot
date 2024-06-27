@@ -43,12 +43,7 @@ fun main(args: Array<String>) {
         if (data == STATISTICS_CLICKED && chatId != null) {
             telegramBotService.sendMessage(chatId = chatId, message = trainer.getStatisctics().statMessage)
         } else if (data == LEARN_WORDS_CLICKED && chatId != null) {
-            trainer.getNextQuestion()?.let {
-                telegramBotService.sendQuestion(
-                    chatId = chatId,
-                    question = it
-                )
-            } ?: telegramBotService.sendMessage(chatId = chatId, message = "Поздравляем! Вы выучили все слова!")
+            telegramBotService.checkNextQuestionAndSend(trainer = trainer, chatId = chatId)
         }
     }
 }

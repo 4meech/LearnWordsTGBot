@@ -60,15 +60,18 @@ class TelegramBotService(private val botToken: String) {
         return response.body()
     }
 
-    fun sendQuestion(chatId: String, question: Question): String {
+    private fun sendQuestion(chatId: String, question: Question): String {
             val sendMessage = "$URL$botToken/sendMessage"
             val engCorrectAnswerText = question.variants[question.correctIndex].originalWord
+
             val answerVariantsJson = question.variants.mapIndexed { index: Int, word: Word ->
                 """
+                    {
                     "text": "${word.originalWord}",
                     "callback_data": "${CALLBACK_DATA_ANSWER_PREFIX}${index + 1}",
+                    }
                 """.trimIndent()
-            }
+            }.joinToString(",\n")
 
             val sendQuestionBody = """
                 {
@@ -77,9 +80,7 @@ class TelegramBotService(private val botToken: String) {
                       "reply_markup": {
                         "inline_keyboard": [
                           [
-                            {
                             $answerVariantsJson
-                            },
                           ]
                         ]
                       }
@@ -87,14 +88,21 @@ class TelegramBotService(private val botToken: String) {
             """.trimIndent()
 
 //            val questionBody = question.asConsoleString()
-            val request = HttpRequest.newBuilder().uri(URI.create(sendMessage))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(sendQuestionBody)).build()
+        val request = HttpRequest.newBuilder().uri(URI.create(sendMessage))
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(sendQuestionBody)).build()
 
-
-            val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
-            println(response.body())
+        val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+        println(response.body())
         return response.body()
+    }
 
+    fun checkNextQuestionAndSend(trainer: LearnWordsTrainer, chatId: String) {
+        trainer.getNextQuestion()?.let {
+            sendQuestion(
+                chatId = chatId,
+                question = it
+            )
+        } ?: sendMessage(chatId = chatId, message = "Поздравляем! Вы выучили все слова!")
     }
 }
