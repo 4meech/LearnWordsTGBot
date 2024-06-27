@@ -68,7 +68,7 @@ class TelegramBotService(private val botToken: String) {
                     "text": "${word.originalWord}",
                     "callback_data": "${CALLBACK_DATA_ANSWER_PREFIX}${index + 1}",
                 """.trimIndent()
-            }.joinToString()
+            }
 
             val sendQuestionBody = """
                 {
