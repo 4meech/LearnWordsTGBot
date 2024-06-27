@@ -65,21 +65,21 @@ class TelegramBotService(private val botToken: String) {
             val engCorrectAnswerText = question.variants[question.correctIndex].originalWord
             val answerVariantsJson = question.variants.mapIndexed { index: Int, word: Word ->
                 """
-                {
                     "text": "${word.originalWord}",
-                    "callback_data": "${CALLBACK_DATA_ANSWER_PREFIX}${index + 1}"
-                }
+                    "callback_data": "${CALLBACK_DATA_ANSWER_PREFIX}${index + 1}",
                 """.trimIndent()
-            }
+            }.joinToString()
 
             val sendQuestionBody = """
                 {
                       "chat_id": $chatId,
-                      "text": $engCorrectAnswerText,
+                      "text": "Выберите верный перевод для слова \"$engCorrectAnswerText\":\n",
                       "reply_markup": {
                         "inline_keyboard": [
                           [
+                            {
                             $answerVariantsJson
+                            },
                           ]
                         ]
                       }
@@ -91,8 +91,9 @@ class TelegramBotService(private val botToken: String) {
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(sendQuestionBody)).build()
 
+
             val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
-//            println(response.body())
+            println(response.body())
         return response.body()
 
     }
