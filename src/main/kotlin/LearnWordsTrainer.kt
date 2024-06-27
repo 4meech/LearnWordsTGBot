@@ -1,5 +1,12 @@
 import java.io.File
 
+data class Word(
+    val originalWord: String,
+    val translatedWord: String,
+    var correctAnswersCount: Int,
+)
+
+
 class LearnWordsTrainer(private val answersToLearn: Int, private val variantsOfAnswers: Int) {
 
     private val dictionary = loadDictionary()
@@ -72,3 +79,4 @@ class LearnWordsTrainer(private val answersToLearn: Int, private val variantsOfA
         } ?: false
     }
 }
+
