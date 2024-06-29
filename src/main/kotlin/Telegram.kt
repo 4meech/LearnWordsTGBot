@@ -26,25 +26,34 @@ fun main(args: Array<String>) {
         val text = messageTextRegex.find(updates)?.groups?.get(1)?.value
         println(text)
 
-        val chatId = chatIdRegex.find(updates)?.groups?.get(1)?.value
+        val chatId = chatIdRegex.find(updates)?.groups?.get(1)?.value ?: continue
         println(chatId)
 
         val data = dataRegex.find(updates)?.groups?.get(1)?.value
         println(data)
 
-//        if (text != null && chatId != null) {
-//            telegramBotService.sendMessage(chatId = chatId, message = text)
-//        }
-
-        if (text == "/start" && chatId != null) {
+        if (text == "/start") {
             telegramBotService.sendMenu(chatId = chatId)
         }
 
-        if (data == STATISTICS_CLICKED && chatId != null) {
+        if (data == STATISTICS_CLICKED) {
             telegramBotService.sendMessage(chatId = chatId, message = trainer.getStatisctics().statMessage)
-        } else if (data == LEARN_WORDS_CLICKED && chatId != null) {
+        } else if (data == LEARN_WORDS_CLICKED) {
             telegramBotService.checkNextQuestionAndSend(trainer = trainer, chatId = chatId)
         }
+
+        if (data != null && data.startsWith(CALLBACK_DATA_ANSWER_PREFIX)) {
+            val userAnswerIndex = data.substringAfter(CALLBACK_DATA_ANSWER_PREFIX).toInt()
+
+            if (trainer.checkAnswer(trainer.getNextQuestion(), userAnswerIndex - 1)) {
+                telegramBotService.sendMessage(chatId = chatId, message = "Верно!")
+            } else {
+                telegramBotService.sendMessage(chatId = chatId, message = "Неверно!")
+            }
+            telegramBotService.checkNextQuestionAndSend(trainer = trainer, chatId = chatId)
+        }
+
+
     }
 }
 
