@@ -6,10 +6,10 @@ data class Word(
     var correctAnswersCount: Int,
 )
 
-
 class LearnWordsTrainer(private val answersToLearn: Int, private val variantsOfAnswers: Int) {
 
     private val dictionary = loadDictionary()
+    internal var currentQuestion: Question? = null
 
     private fun loadDictionary(): MutableList<Word> {
         try {
@@ -59,10 +59,12 @@ class LearnWordsTrainer(private val answersToLearn: Int, private val variantsOfA
 
         val correctIndex = possibleAnswers.indices.random()
 
-        return Question(
+        currentQuestion = Question(
             variants = possibleAnswers,
             correctIndex = correctIndex,
         )
+
+        return currentQuestion
     }
 
     fun checkAnswer(question: Question?, userAnswer: Int): Boolean {
@@ -79,4 +81,3 @@ class LearnWordsTrainer(private val answersToLearn: Int, private val variantsOfA
         } ?: false
     }
 }
-

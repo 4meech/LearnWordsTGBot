@@ -61,29 +61,33 @@ class TelegramBotService(private val botToken: String) {
     }
 
     private fun sendQuestion(chatId: String, question: Question): String {
-            val sendMessage = "$URL$botToken/sendMessage"
-            val engCorrectAnswerText = question.variants[question.correctIndex].translatedWord
+        val sendMessage = "$URL$botToken/sendMessage"
+        val engCorrectAnswerText = question.variants[question.correctIndex].translatedWord
 
-            val answerVariantsJson = question.variants.mapIndexed { index: Int, word: Word ->
-                """
+        val answerVariantsJson = question.variants.mapIndexed { index: Int, word: Word ->
+            """
                     {
                     "text": "${word.originalWord}",
                     "callback_data": "${CALLBACK_DATA_ANSWER_PREFIX}${index + 1}"
                     }
                 """.trimIndent()
-            }.joinToString(",")
+        }.joinToString(",")
 
-            val sendQuestionBody = """
+        val sendQuestionBody = """
                 {
-                      "chat_id": $chatId,
-                      "text": "Выберите верный перевод для слова \"$engCorrectAnswerText\":\n",
-                      "reply_markup": {
-                        "inline_keyboard": [
-                          [
-                            $answerVariantsJson
-                          ]
-                        ]
-                      }
+                  "chat_id": $chatId,
+                  "text": "Выберите верный перевод для слова \"$engCorrectAnswerText\":\n",
+                  "reply_markup": {
+                    "inline_keyboard": [
+                      [
+                        $answerVariantsJson
+                      ],
+                      [{
+                        "text": "Выход в главное меню",
+                        "callback_data": "exitToMainMenu"
+                      }]
+                    ]
+                  }
                 }
             """.trimIndent()
 

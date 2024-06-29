@@ -34,28 +34,29 @@ fun main(args: Array<String>) {
 
         if (text == "/start") {
             telegramBotService.sendMenu(chatId = chatId)
-        }
-
-        if (data == STATISTICS_CLICKED) {
+        } else if (data == STATISTICS_CLICKED) {
             telegramBotService.sendMessage(chatId = chatId, message = trainer.getStatisctics().statMessage)
         } else if (data == LEARN_WORDS_CLICKED) {
             telegramBotService.checkNextQuestionAndSend(trainer = trainer, chatId = chatId)
-        }
-
-        if (data != null && data.startsWith(CALLBACK_DATA_ANSWER_PREFIX)) {
+        } else if (data != null && data.startsWith(CALLBACK_DATA_ANSWER_PREFIX)) {
             val userAnswerIndex = data.substringAfter(CALLBACK_DATA_ANSWER_PREFIX).toInt()
 
-            if (trainer.checkAnswer(trainer.getNextQuestion(), userAnswerIndex - 1)) {
-                telegramBotService.sendMessage(chatId = chatId, message = "Верно!")
+            if (trainer.checkAnswer(trainer.currentQuestion, userAnswerIndex)) {
+                telegramBotService.sendMessage(chatId, "Верно!")
             } else {
-                telegramBotService.sendMessage(chatId = chatId, message = "Неверно!")
+                telegramBotService.sendMessage(chatId, "Неверно! " +
+                        "Верный ответ: ${
+                            trainer.currentQuestion?.correctIndex?.let {
+                                trainer.currentQuestion?.variants?.get(
+                                    it
+                                )?.originalWord
+                            }
+                        }"
+                )
             }
             telegramBotService.checkNextQuestionAndSend(trainer = trainer, chatId = chatId)
+        } else if (data == "exitToMainMenu") {
+            telegramBotService.sendMenu(chatId)
         }
-
-
     }
 }
-
-
-
