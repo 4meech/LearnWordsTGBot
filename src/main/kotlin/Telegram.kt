@@ -1,3 +1,8 @@
+const val STATISTICS_CLICKED = "statistics_clicked"
+const val LEARN_WORDS_CLICKED = "learn_words_clicked"
+const val EXIT_CLICKED = "exitToMainMenu"
+const val START_USER_INPUT = "/start"
+
 fun main(args: Array<String>) {
 
     val telegramBotService = TelegramBotService(botToken = args[0])
@@ -7,32 +12,63 @@ fun main(args: Array<String>) {
     val updateIdRegex = "\"update_id\":(.+?),".toRegex()
     val messageTextRegex = "\"text\":\"(.+?)\"".toRegex()
     val chatIdRegex = "\"chat\":\\{\"id\":(.+?),".toRegex()
+    val dataRegex = "\"data\":\"(.+?)\"".toRegex()
 
+    val trainer = LearnWordsTrainer(3, 4)
+
+    telegramBotService.sendMenu(chatId = "")
     while (true) {
         Thread.sleep(2000)
         val updates: String = telegramBotService.getUpdates(updateId)
         println(updates)
 
-        val updateIdMatchResult: MatchResult? = updateIdRegex.find(updates)
-        val idGroups = updateIdMatchResult?.groups
-        updateId = idGroups?.get(1)?.value?.toInt()?.plus(1)
+        updateId = updateIdRegex.find(updates)?.groups?.get(1)?.value?.toInt()?.plus(1)
         println(updateId)
 
-        val textMatchResult: MatchResult? = messageTextRegex.find(updates)
-        val textGroups = textMatchResult?.groups
-        val text = textGroups?.get(1)?.value
+        val text = messageTextRegex.find(updates)?.groups?.get(1)?.value
         println(text)
 
-        val chatIdMatchResult: MatchResult? = chatIdRegex.find(updates)
-        val chatIdGroups = chatIdMatchResult?.groups
-        val chatId = chatIdGroups?.get(1)?.value
+        val chatId = chatIdRegex.find(updates)?.groups?.get(1)?.value ?: continue
         println(chatId)
 
-        if (text != null && chatId != null) {
-            telegramBotService.sendMessage(chatId = chatId, message = text)
+        val data = dataRegex.find(updates)?.groups?.get(1)?.value
+        println(data)
+
+        when {
+            text == START_USER_INPUT -> {
+                telegramBotService.sendMenu(chatId = chatId)
+            }
+
+            data == STATISTICS_CLICKED -> {
+                telegramBotService.sendMessage(chatId = chatId, message = trainer.getStatisctics().statMessage)
+            }
+
+            data == LEARN_WORDS_CLICKED -> {
+                telegramBotService.checkNextQuestionAndSend(trainer = trainer, chatId = chatId)
+            }
+
+            data != null && data.startsWith(CALLBACK_DATA_ANSWER_PREFIX) -> {
+                val userAnswerIndex = data.substringAfter(CALLBACK_DATA_ANSWER_PREFIX).toInt()
+
+                if (trainer.checkAnswer(userAnswerIndex)) {
+                    telegramBotService.sendMessage(chatId, "Верно!")
+                } else {
+                    telegramBotService.sendMessage(chatId, "Неверно! " +
+                            "Верный ответ: ${
+                                trainer.currentQuestion?.correctIndex?.let {
+                                    trainer.currentQuestion?.variants?.get(
+                                        it
+                                    )?.originalWord
+                                }
+                            }"
+                    )
+                }
+                telegramBotService.checkNextQuestionAndSend(trainer = trainer, chatId = chatId)
+            }
+
+            data == EXIT_CLICKED -> {
+                telegramBotService.sendMenu(chatId)
+            }
         }
     }
 }
-
-
-
