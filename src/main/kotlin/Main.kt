@@ -43,7 +43,7 @@ fun main() {
                             continue
                         }
 
-                        if (trainer.checkAnswer(question, userAnswer)) {
+                        if (trainer.checkAnswer(userAnswer)) {
                             println("Верно!")
                             println()
                         } else {

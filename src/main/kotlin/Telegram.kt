@@ -38,16 +38,19 @@ fun main(args: Array<String>) {
             text == START_USER_INPUT -> {
                 telegramBotService.sendMenu(chatId = chatId)
             }
+
             data == STATISTICS_CLICKED -> {
                 telegramBotService.sendMessage(chatId = chatId, message = trainer.getStatisctics().statMessage)
             }
+
             data == LEARN_WORDS_CLICKED -> {
                 telegramBotService.checkNextQuestionAndSend(trainer = trainer, chatId = chatId)
             }
+
             data != null && data.startsWith(CALLBACK_DATA_ANSWER_PREFIX) -> {
                 val userAnswerIndex = data.substringAfter(CALLBACK_DATA_ANSWER_PREFIX).toInt()
 
-                if (trainer.checkAnswer(trainer.currentQuestion, userAnswerIndex)) {
+                if (trainer.checkAnswer(userAnswerIndex)) {
                     telegramBotService.sendMessage(chatId, "Верно!")
                 } else {
                     telegramBotService.sendMessage(chatId, "Неверно! " +
@@ -62,6 +65,7 @@ fun main(args: Array<String>) {
                 }
                 telegramBotService.checkNextQuestionAndSend(trainer = trainer, chatId = chatId)
             }
+
             data == EXIT_CLICKED -> {
                 telegramBotService.sendMenu(chatId)
             }

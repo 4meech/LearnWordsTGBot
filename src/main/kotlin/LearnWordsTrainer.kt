@@ -67,8 +67,8 @@ class LearnWordsTrainer(private val answersToLearn: Int, private val variantsOfA
         return currentQuestion
     }
 
-    fun checkAnswer(question: Question?, userAnswer: Int): Boolean {
-        return question?.let {
+    fun checkAnswer(userAnswer: Int): Boolean {
+        return currentQuestion?.let {
             val correctIndex = it.correctIndex
 
             if (userAnswer == correctIndex + 1) {
