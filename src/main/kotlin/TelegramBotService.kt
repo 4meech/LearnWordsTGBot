@@ -1,3 +1,5 @@
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -11,7 +13,7 @@ const val CALLBACK_DATA_ANSWER_PREFIX = "answer_"
 class TelegramBotService(private val botToken: String) {
     private val httpClient = HttpClient.newBuilder().build()
 
-    fun getUpdates(updateId: Int?): String {
+    fun getUpdates(updateId: Long?): String {
         val urlGetUpdates = "$URL${this.botToken}/getUpdates?offset=$updateId"
         val requestUpdate: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlGetUpdates)).build()
         val responseUpdate = httpClient.send(requestUpdate, HttpResponse.BodyHandlers.ofString())
@@ -19,7 +21,7 @@ class TelegramBotService(private val botToken: String) {
         return responseUpdate.body()
     }
 
-    fun sendMessage(chatId: String, message: String) {
+    fun sendMessage(chatId: Long?, message: String) {
         val encodedMessage = URLEncoder.encode(message, StandardCharsets.UTF_8.toString())
         val urlSendMessage = "$URL$botToken/sendMessage?chat_id=$chatId&text=$encodedMessage"
         val requestUpdate: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlSendMessage)).build()
@@ -27,82 +29,71 @@ class TelegramBotService(private val botToken: String) {
         httpClient.send(requestUpdate, HttpResponse.BodyHandlers.ofString())
     }
 
-    fun sendMenu(chatId: String): String {
+    fun sendMenu(json: Json, chatId: Long?): String {
         val sendMessage = "$URL$botToken/sendMessage"
 
-        val sendMenuBody = """
-            {
-              "chat_id": $chatId,
-              "text": "Основное меню",
-              "reply_markup": {
-                "inline_keyboard": [
-                  [
-                    {
-                      "text": "Учить слова",
-                      "callback_data": "learn_words_clicked"
-                    },
-                    {
-                      "text": "Статистика",
-                      "callback_data": "statistics_clicked"
-                    }
-                  ]
-                ]
-              }
-            }
-        """.trimIndent()
+        val requestBody = SendMessageRequest(
+            chatId = chatId,
+            text = "Основное меню",
+            replyMarkup = ReplyMarkup(
+                listOf(listOf(
+                    InlineKeyboard(text = "Учить слова", callbackData = LEARN_WORDS_CLICKED),
+                    InlineKeyboard(text = "Статистика", callbackData = STATISTICS_CLICKED),
+                ),
+                    listOf(
+                        InlineKeyboard(text = "Сбросить прогресс", callbackData = STAT_RESET_CLICKED),
+                    )
+                )
+            )
+        )
 
+        val requestBodyString = json.encodeToString(requestBody)
 
         val request = HttpRequest.newBuilder().uri(URI.create(sendMessage))
             .header("Content-Type", "application/json")
-            .POST(HttpRequest.BodyPublishers.ofString(sendMenuBody)).build()
+            .POST(HttpRequest.BodyPublishers.ofString(requestBodyString)).build()
 
         val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
         return response.body()
     }
 
-    private fun sendQuestion(chatId: String, question: Question): String {
+    private fun sendQuestion(json: Json, chatId: Long?, question: Question): String {
         val sendMessage = "$URL$botToken/sendMessage"
         val engCorrectAnswerText = question.variants[question.correctIndex].translatedWord
 
-        val answerVariantsJson = question.variants.mapIndexed { index: Int, word: Word ->
-            """
-                    {
-                    "text": "${word.originalWord}",
-                    "callback_data": "${CALLBACK_DATA_ANSWER_PREFIX}${index + 1}"
-                    }
-                """.trimIndent()
-        }.joinToString(",")
+        val requestBody = SendMessageRequest(
+            chatId = chatId,
+            text = "Выберите верный перевод для слова \"$engCorrectAnswerText\":\n",
+            replyMarkup = ReplyMarkup(
+                listOf(
+                    question.variants.mapIndexed { index, word ->
+                        InlineKeyboard(
+                            text = word.originalWord,
+                            callbackData = "$CALLBACK_DATA_ANSWER_PREFIX${index.plus(1)}"
+                        )
+                    },
+                    listOf(
+                        InlineKeyboard(text = "Назад", callbackData = EXIT_CLICKED)
+                    )
+                )
+            )
+        )
 
-        val sendQuestionBody = """
-                {
-                  "chat_id": $chatId,
-                  "text": "Выберите верный перевод для слова \"$engCorrectAnswerText\":\n",
-                  "reply_markup": {
-                    "inline_keyboard": [
-                      [
-                        $answerVariantsJson
-                      ],
-                      [{
-                        "text": "Выход в главное меню",
-                        "callback_data": "exitToMainMenu"
-                      }]
-                    ]
-                  }
-                }
-            """.trimIndent()
+        val requestBodyString = json.encodeToString(requestBody)
 
         val request = HttpRequest.newBuilder().uri(URI.create(sendMessage))
             .header("Content-Type", "application/json")
-            .POST(HttpRequest.BodyPublishers.ofString(sendQuestionBody)).build()
+            .POST(HttpRequest.BodyPublishers.ofString(requestBodyString)).build()
 
         val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
         println(response.body())
         return response.body()
     }
 
-    fun checkNextQuestionAndSend(trainer: LearnWordsTrainer, chatId: String) {
+    fun checkNextQuestionAndSend(json: Json, trainer: LearnWordsTrainer, chatId: Long?) {
         trainer.getNextQuestion()?.let {
             sendQuestion(
+                json = json,
                 chatId = chatId,
                 question = it
             )

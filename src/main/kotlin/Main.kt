@@ -4,7 +4,7 @@ fun main() {
 
     try {
         val trainer = try {
-            LearnWordsTrainer(3, 4)
+            LearnWordsTrainer(answersToLearn = 3, variantsOfAnswers = 4)
         } catch (e: Exception) {
             println("Невозможно загрузить словарь. ${e.message}")
             return
@@ -16,7 +16,7 @@ fun main() {
             1 — Учить слова
             2 — Статистика
             0 — Выход
-        """.trimIndent()
+                """.trimIndent()
             )
             val userInput = readlnOrNull()
 
@@ -54,7 +54,7 @@ fun main() {
                 }
 
                 "2" -> {
-                    val statistics = trainer.getStatisctics()
+                    val statistics = trainer.getStatistics()
 
                     println(statistics.statMessage)
                 }
