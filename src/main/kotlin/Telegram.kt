@@ -78,20 +78,27 @@ fun main(args: Array<String>) {
     val trainers = HashMap<Long, LearnWordsTrainer>()
 
     var lastUpdateId: Long? = 0
+    var counter = 0
 
     while (true) {
-        Thread.sleep(2000)
-        val responseString: String = telegramBotService.getUpdates(lastUpdateId)
-        println(responseString)
 
-        val response = json.decodeFromString<Response>(responseString)
+        Thread.sleep(2000)
+        val response: Response? = try {
+            telegramBotService.getUpdates(lastUpdateId)
+        } catch (e: Exception) {
+            println("Исключение${e.message}"); null
+        }
+
+        println(response.toString())
+        counter++
+        println(counter)
+
+        if (response == null) continue
         if (response.result.isEmpty()) continue
 
         val sortedUpdates = response.result.sortedBy { it.updateId }
         sortedUpdates.forEach { handleUpdate(it, json, trainers, telegramBotService) }
         lastUpdateId = sortedUpdates.last().updateId + 1
-
-
     }
 }
 
@@ -120,7 +127,7 @@ fun handleUpdate(
             telegramBotService.checkNextQuestionAndSend(json = json, trainer = trainer, chatId = chatId)
         }
 
-        data != null && data.startsWith(CALLBACK_DATA_ANSWER_PREFIX) -> {
+        data?.startsWith(CALLBACK_DATA_ANSWER_PREFIX) == true -> {
             val userAnswerIndex = data.substringAfter(CALLBACK_DATA_ANSWER_PREFIX).toInt()
 
             if (trainer.checkAnswer(userAnswerIndex)) {

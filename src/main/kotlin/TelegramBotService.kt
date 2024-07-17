@@ -12,13 +12,21 @@ const val CALLBACK_DATA_ANSWER_PREFIX = "answer_"
 
 class TelegramBotService(private val botToken: String) {
     private val httpClient = HttpClient.newBuilder().build()
+    private val json = Json { ignoreUnknownKeys = true }
 
-    fun getUpdates(updateId: Long?): String {
+    fun getUpdates(updateId: Long?): Response? {
         val urlGetUpdates = "$URL${this.botToken}/getUpdates?offset=$updateId"
         val requestUpdate: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlGetUpdates)).build()
         val responseUpdate = httpClient.send(requestUpdate, HttpResponse.BodyHandlers.ofString())
 
-        return responseUpdate.body()
+        val responseString = responseUpdate.body()
+
+        return try {
+            json.decodeFromString(responseString)
+        } catch (e: Exception) {
+            println("Невозможно распарсить ответ: ${e.message}")
+            null
+        }
     }
 
     fun sendMessage(chatId: Long?, message: String) {
