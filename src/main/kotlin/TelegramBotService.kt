@@ -29,7 +29,7 @@ class TelegramBotService(private val botToken: String) {
         }
     }
 
-    fun sendMessage(chatId: Long?, message: String) {
+    fun sendMessage(chatId: Long, message: String) {
         val encodedMessage = URLEncoder.encode(message, StandardCharsets.UTF_8.toString())
         val urlSendMessage = "$URL$botToken/sendMessage?chat_id=$chatId&text=$encodedMessage"
         val requestUpdate: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlSendMessage)).build()
@@ -37,8 +37,8 @@ class TelegramBotService(private val botToken: String) {
         httpClient.send(requestUpdate, HttpResponse.BodyHandlers.ofString())
     }
 
-    fun sendMenu(json: Json, chatId: Long?): String {
-        val sendMessage = "$URL$botToken/sendMessage"
+    fun sendMenu(json: Json, chatId: Long): String {
+        val sendMessageUrl = "$URL$botToken/sendMessage"
 
         val requestBody = SendMessageRequest(
             chatId = chatId,
@@ -57,7 +57,7 @@ class TelegramBotService(private val botToken: String) {
 
         val requestBodyString = json.encodeToString(requestBody)
 
-        val request = HttpRequest.newBuilder().uri(URI.create(sendMessage))
+        val request = HttpRequest.newBuilder().uri(URI.create(sendMessageUrl))
             .header("Content-Type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(requestBodyString)).build()
 
@@ -73,15 +73,16 @@ class TelegramBotService(private val botToken: String) {
             chatId = chatId,
             text = "Выберите верный перевод для слова \"$engCorrectAnswerText\":\n",
             replyMarkup = ReplyMarkup(
-                listOf(
-                    question.variants.mapIndexed { index, word ->
+                question.variants.mapIndexed { index, word ->
+                    listOf(
                         InlineKeyboard(
                             text = word.originalWord,
-                            callbackData = "$CALLBACK_DATA_ANSWER_PREFIX${index.plus(1)}"
+                            callbackData = "$CALLBACK_DATA_ANSWER_PREFIX${index + 1}"
                         )
-                    },
+                    )
+                } + listOf(
                     listOf(
-                        InlineKeyboard(text = "Назад", callbackData = EXIT_CLICKED)
+                        InlineKeyboard(text = "⬅\uFE0F Назад", callbackData = EXIT_CLICKED)
                     )
                 )
             )
@@ -98,7 +99,7 @@ class TelegramBotService(private val botToken: String) {
         return response.body()
     }
 
-    fun checkNextQuestionAndSend(json: Json, trainer: LearnWordsTrainer, chatId: Long?) {
+    fun checkNextQuestionAndSend(json: Json, trainer: LearnWordsTrainer, chatId: Long) {
         trainer.getNextQuestion()?.let {
             sendQuestion(
                 json = json,
