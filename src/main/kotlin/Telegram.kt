@@ -71,6 +71,38 @@ data class Chat(
     val id: Long,
 )
 
+class ReplyMarkupFormatter {
+    fun questionFormat(question: Question): ReplyMarkup {
+        val variantsButtons = question.variants.mapIndexed { index, word ->
+            listOf(
+                InlineKeyboard(
+                    text = word.originalWord,
+                    callbackData = "$CALLBACK_DATA_ANSWER_PREFIX${index + 1}"
+                )
+            )
+        } + listOf(
+            listOf(
+                InlineKeyboard(text = "⬅\uFE0F Назад", callbackData = EXIT_CLICKED)
+            )
+        )
+        return ReplyMarkup(inlineKeyboard = variantsButtons)
+    }
+
+    fun menuFormat(): ReplyMarkup {
+        val menuButtons = listOf(
+            listOf(
+                InlineKeyboard(text = "Учить слова", callbackData = LEARN_WORDS_CLICKED),
+                InlineKeyboard(text = "Статистика", callbackData = STATISTICS_CLICKED),
+            ),
+            listOf(
+                InlineKeyboard(text = "Сбросить прогресс", callbackData = STAT_RESET_CLICKED),
+            )
+        )
+
+        return ReplyMarkup(inlineKeyboard = menuButtons)
+    }
+}
+
 fun main(args: Array<String>) {
 
     val telegramBotService = TelegramBotService(botToken = args[0])

@@ -13,6 +13,7 @@ const val CALLBACK_DATA_ANSWER_PREFIX = "answer_"
 class TelegramBotService(private val botToken: String) {
     private val httpClient = HttpClient.newBuilder().build()
     private val json = Json { ignoreUnknownKeys = true }
+    private val replyMarkupFormatter = ReplyMarkupFormatter()
 
     fun getUpdates(updateId: Long?): Response? {
         val urlGetUpdates = "$URL${this.botToken}/getUpdates?offset=$updateId"
@@ -43,16 +44,7 @@ class TelegramBotService(private val botToken: String) {
         val requestBody = SendMessageRequest(
             chatId = chatId,
             text = "Основное меню",
-            replyMarkup = ReplyMarkup(
-                listOf(listOf(
-                    InlineKeyboard(text = "Учить слова", callbackData = LEARN_WORDS_CLICKED),
-                    InlineKeyboard(text = "Статистика", callbackData = STATISTICS_CLICKED),
-                ),
-                    listOf(
-                        InlineKeyboard(text = "Сбросить прогресс", callbackData = STAT_RESET_CLICKED),
-                    )
-                )
-            )
+            replyMarkup = replyMarkupFormatter.menuFormat()
         )
 
         val requestBodyString = json.encodeToString(requestBody)
@@ -69,23 +61,11 @@ class TelegramBotService(private val botToken: String) {
         val sendMessage = "$URL$botToken/sendMessage"
         val engCorrectAnswerText = question.variants[question.correctIndex].translatedWord
 
+
         val requestBody = SendMessageRequest(
             chatId = chatId,
             text = "Выберите верный перевод для слова \"$engCorrectAnswerText\":\n",
-            replyMarkup = ReplyMarkup(
-                question.variants.mapIndexed { index, word ->
-                    listOf(
-                        InlineKeyboard(
-                            text = word.originalWord,
-                            callbackData = "$CALLBACK_DATA_ANSWER_PREFIX${index + 1}"
-                        )
-                    )
-                } + listOf(
-                    listOf(
-                        InlineKeyboard(text = "⬅\uFE0F Назад", callbackData = EXIT_CLICKED)
-                    )
-                )
-            )
+            replyMarkup = replyMarkupFormatter.questionFormat(question)
         )
 
         val requestBodyString = json.encodeToString(requestBody)
