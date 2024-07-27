@@ -10,9 +10,40 @@ import java.nio.charset.StandardCharsets
 const val URL = "https://api.telegram.org/bot"
 const val CALLBACK_DATA_ANSWER_PREFIX = "answer_"
 
-class TelegramBotService(private val botToken: String) {
+class ReplyMarkupFormatter {
+    fun questionFormat(question: Question): ReplyMarkup {
+        val variantsButtons = question.variants.mapIndexed { index, word ->
+            listOf(
+                InlineKeyboard(
+                    text = word.originalWord,
+                    callbackData = "$CALLBACK_DATA_ANSWER_PREFIX${index + 1}"
+                )
+            )
+        } + listOf(
+            listOf(
+                InlineKeyboard(text = "⬅\uFE0F Назад", callbackData = EXIT_CLICKED)
+            )
+        )
+        return ReplyMarkup(inlineKeyboard = variantsButtons)
+    }
+
+    fun menuFormat(): ReplyMarkup {
+        val menuButtons = listOf(
+            listOf(
+                InlineKeyboard(text = "Учить слова", callbackData = LEARN_WORDS_CLICKED),
+                InlineKeyboard(text = "Статистика", callbackData = STATISTICS_CLICKED),
+            ),
+            listOf(
+                InlineKeyboard(text = "Сбросить прогресс", callbackData = STAT_RESET_CLICKED),
+            )
+        )
+
+        return ReplyMarkup(inlineKeyboard = menuButtons)
+    }
+}
+
+class TelegramBotService(private val botToken: String, private val json: Json) {
     private val httpClient = HttpClient.newBuilder().build()
-    private val json = Json { ignoreUnknownKeys = true }
     private val replyMarkupFormatter = ReplyMarkupFormatter()
 
     fun getUpdates(updateId: Long?): Response? {
@@ -38,7 +69,7 @@ class TelegramBotService(private val botToken: String) {
         httpClient.send(requestUpdate, HttpResponse.BodyHandlers.ofString())
     }
 
-    fun sendMenu(json: Json, chatId: Long): String {
+    fun sendMenu(chatId: Long): String {
         val sendMessageUrl = "$URL$botToken/sendMessage"
 
         val requestBody = SendMessageRequest(
@@ -57,7 +88,7 @@ class TelegramBotService(private val botToken: String) {
         return response.body()
     }
 
-    private fun sendQuestion(json: Json, chatId: Long?, question: Question): String {
+    private fun sendQuestion(chatId: Long?, question: Question): String {
         val sendMessage = "$URL$botToken/sendMessage"
         val engCorrectAnswerText = question.variants[question.correctIndex].translatedWord
 
@@ -79,10 +110,9 @@ class TelegramBotService(private val botToken: String) {
         return response.body()
     }
 
-    fun checkNextQuestionAndSend(json: Json, trainer: LearnWordsTrainer, chatId: Long) {
+    fun checkNextQuestionAndSend(trainer: LearnWordsTrainer, chatId: Long) {
         trainer.getNextQuestion()?.let {
             sendQuestion(
-                json = json,
                 chatId = chatId,
                 question = it
             )

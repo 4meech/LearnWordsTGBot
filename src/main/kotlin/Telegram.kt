@@ -71,42 +71,9 @@ data class Chat(
     val id: Long,
 )
 
-class ReplyMarkupFormatter {
-    fun questionFormat(question: Question): ReplyMarkup {
-        val variantsButtons = question.variants.mapIndexed { index, word ->
-            listOf(
-                InlineKeyboard(
-                    text = word.originalWord,
-                    callbackData = "$CALLBACK_DATA_ANSWER_PREFIX${index + 1}"
-                )
-            )
-        } + listOf(
-            listOf(
-                InlineKeyboard(text = "⬅\uFE0F Назад", callbackData = EXIT_CLICKED)
-            )
-        )
-        return ReplyMarkup(inlineKeyboard = variantsButtons)
-    }
-
-    fun menuFormat(): ReplyMarkup {
-        val menuButtons = listOf(
-            listOf(
-                InlineKeyboard(text = "Учить слова", callbackData = LEARN_WORDS_CLICKED),
-                InlineKeyboard(text = "Статистика", callbackData = STATISTICS_CLICKED),
-            ),
-            listOf(
-                InlineKeyboard(text = "Сбросить прогресс", callbackData = STAT_RESET_CLICKED),
-            )
-        )
-
-        return ReplyMarkup(inlineKeyboard = menuButtons)
-    }
-}
-
 fun main(args: Array<String>) {
 
-    val telegramBotService = TelegramBotService(botToken = args[0])
-    val json = Json { ignoreUnknownKeys = true }
+    val telegramBotService = TelegramBotService(botToken = args[0], json = Json { ignoreUnknownKeys = true })
     val trainers = HashMap<Long, LearnWordsTrainer>()
 
     var lastUpdateId: Long? = 0
@@ -129,14 +96,13 @@ fun main(args: Array<String>) {
         if (response.result.isEmpty()) continue
 
         val sortedUpdates = response.result.sortedBy { it.updateId }
-        sortedUpdates.forEach { handleUpdate(it, json, trainers, telegramBotService) }
+        sortedUpdates.forEach { handleUpdate(it, trainers, telegramBotService) }
         lastUpdateId = sortedUpdates.last().updateId + 1
     }
 }
 
 fun handleUpdate(
     update: Update,
-    json: Json,
     trainers: HashMap<Long, LearnWordsTrainer>,
     telegramBotService: TelegramBotService
 ) {
@@ -147,16 +113,16 @@ fun handleUpdate(
     val trainer = trainers.getOrPut(chatId) { LearnWordsTrainer("$chatId.txt", 3, 4) }
     when {
         text == START_USER_INPUT -> {
-            telegramBotService.sendMenu(json = json, chatId = chatId)
+            telegramBotService.sendMenu(chatId = chatId)
         }
 
         data == STATISTICS_CLICKED -> {
             telegramBotService.sendMessage(chatId = chatId, message = trainer.getStatistics().statMessage)
-            telegramBotService.sendMenu(json, chatId)
+            telegramBotService.sendMenu(chatId)
         }
 
         data == LEARN_WORDS_CLICKED -> {
-            telegramBotService.checkNextQuestionAndSend(json = json, trainer = trainer, chatId = chatId)
+            telegramBotService.checkNextQuestionAndSend(trainer = trainer, chatId = chatId)
         }
 
         data?.startsWith(CALLBACK_DATA_ANSWER_PREFIX) == true -> {
@@ -175,17 +141,17 @@ fun handleUpdate(
                         }"
                 )
             }
-            telegramBotService.checkNextQuestionAndSend(json = json, trainer = trainer, chatId = chatId)
+            telegramBotService.checkNextQuestionAndSend(trainer = trainer, chatId = chatId)
         }
 
         data == EXIT_CLICKED -> {
-            telegramBotService.sendMenu(json, chatId)
+            telegramBotService.sendMenu(chatId)
         }
 
         data == STAT_RESET_CLICKED -> {
             trainer.resetProgress()
             telegramBotService.sendMessage(chatId, "Прогресс сброшен")
-            telegramBotService.sendMenu(json, chatId)
+            telegramBotService.sendMenu(chatId)
         }
     }
 }
